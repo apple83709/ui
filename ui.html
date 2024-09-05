@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>檢測系統</title>
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            font-family: Arial, sans-serif;
+            background-color: #f5f5f5;
+            margin: 0;
+            padding: 20px;
+        }
+        #container {
+            display: flex;
+            flex-wrap: wrap;
+            /* width: 600px; */
+            border: 2px solid black;
+            padding: 10px;
+            box-sizing: border-box;
+            background-color: white;
+        }
+        .section {
+            /* flex: 1 1 100%; */
+            margin: 5px;
+            padding: 10px;
+            box-sizing: border-box;
+            text-align: center;
+        }
+        #image-section {
+            background-color: black;
+            color: white;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            /* position: relative; */
+        }
+        .slot {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin: 0 5px;
+            padding: 5px;
+            border: 2px solid pink;
+            border-radius: 15px;
+            width: 100px; /* 調整寬度以適應 4 列顯示 */
+        }
+        .circle-row {
+            display: flex;
+            justify-content: space-around;
+            width: 100%;
+            margin: 2px 0;
+        }
+        .circle {
+            width: 10px;
+            height: 10px;
+            background-color: #ccc;
+            border-radius: 50%;
+            margin: 5px 0;
+        }
+        .circle.dark {
+            background-color: #555;
+        }
+        .circle.red {
+            background-color: #f00;
+        }
+        #info-section {
+            background-color: lightyellow;
+        }
+        #info-section p {
+            margin: 5px 0;
+        }
+        #message-section {
+            background-color: lightblue;
+        }
+        #display-section {
+            background-color: white;
+        }
+        #start-section {
+            background-color: lightgreen;
+        }
+        #exit-section {
+            background-color: lightcoral;
+        }
+        button {
+            padding: 10px;
+            margin: 5px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+    </style>
+    <script src="jquery-3.6.0.min.js"></script>
+    <!-- load bootstrap css and js -->
+    <link rel="stylesheet" href="bootstrap.min.css">
+    <script src="bootstrap.min.js"></script>
+    <script src="bootstrap.bundle.min.js"></script>
+    <script>
+    </script>
+</head>
+<body>
+    <div id="container">
+        <table style="width: 100%;">
+            <tr>
+                <th colspan="3">
+                    <div id="image-section" class="section">
+                        <img id="pred-image" style="width:600px;height:400px;" />
+                        <!-- <img id="test-image" src="sample1.png" /> -->
+                    </div>
+                </th>
+            </tr>
+            <tr>
+                <td style="text-align: center;">
+                    產品件號：
+                    <select id="partno-dropdown">
+                        <option value="">Select Part No</option>
+                    </select>
+                </td>
+                <td style="text-align: center;">
+                    <button class="btn btn-primary" onclick="displayResult('S')">前方</button>
+                    <button class="btn btn-primary" onclick="displayResult('E')">右側</button>
+                    <button class="btn btn-primary" onclick="displayResult('N')">後方</button>
+                    <button class="btn btn-primary" onclick="displayResult('W')">左側</button>
+                </td>
+                <td></td>
+            </tr>
+            <tr>
+                <td style="width:30%;">
+                    <div id="info-section" class="section" style="height:120px;">
+                        <p>檢測數: <span id="total-tests">0</span></p>
+                        <p>通孔數: <span id="passed-tests">0</span></p>
+                        <p>未通孔: <span id="failed-tests">0</span></p>
+                    </div>
+                </td>
+                <td rowspan="2" style="width:40%;">
+                    <div id="display-section" class="section">
+                        <img id="sample-image" src="sample1.png" style="width:300px;height:200px;visibility: hidden;">
+                    </div>
+                </td>
+                <td style="width:30%;">
+                    <div id="start-section" class="section" style="height:120px;">
+                        <br/>
+                        <button onclick="startPred()" class="btn" 
+                        style="background-color: #ccc; border: 1px solid #111;" 
+                        disabled>開始檢測</button>
+                    </div>
+                </td>
+            </tr>
+            <tr>
+                <td style="width:30%;">
+                    <div id="message-section" class="section">
+                        系統訊息
+                        <div id="system-message" 
+                        style="height:80px;overflow-y: scroll;text-align: left;">
+                        </div>
+                    </div>
+                </td>
+                <td style="width:30%;">
+                    <div id="exit-section" class="section" style="height:120px;">
+                        <br/>
+                        <button onclick="exitSystem()" class="btn" 
+                        style="background-color: #ccc; border: 1px solid #111;" 
+                        disabled>離開系統</button>
+                    </div>
+                </td>
+            </tr>
+        </table>
+    </div>
+    <!-- define div modal contains system welcome messages -->
+    <div class="modal fade" id="sys-msg-modal" tabindex="-1" role="dialog" aria-labelledby="welcomeModalLabel" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="welcomeModalLabel">系統訊息</h5>
+                </div>
+                <div class="modal-body">
+                    <div id="sys-msg-content" style="text-align: center; padding: 5px;">
+                        歡迎使用檢測系統<br/>
+                        請等待系統初始化，即可開始檢測。
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary" data-dismiss="modal">確定</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        var initMsg = [
+            '相機1連接中...',
+            '相機1連接成功。',
+            '相機2連接中...',
+            '相機2連接成功。',
+            '相機3連接中...',
+            '相機3連接成功。',
+            '相機4連接中...',
+            '相機4連接成功。',
+            '系統初始化完成。'
+        ];
+        //page init
+        $(document).ready(function() {
+            getPartnoData();
+            //drawProducts();
+            //display welcomeModal, inform user to wait for initialization
+            $('#sys-msg-modal').modal('show');
+
+            //clear system-message div
+            $('#system-message').empty();
+            //load initMsg into system-message div 1 by 1 with 1 sec interval, the last message will keep on top of system-message div
+            for (let i = 0; i < initMsg.length; i++) {
+                setTimeout(function() {
+                    $('#system-message').prepend(initMsg[i] + '<br/>');
+                }, i * 500);
+            }
+
+            //enable startTest and exitSystem button after initialization
+            setTimeout(function() {
+                $('#start-section button').removeAttr('disabled');
+                $('#exit-section button').removeAttr('disabled');
+            }, initMsg.length * 500);
+        });
+
+
+        function getPartnoData()
+        {
+                $.ajax({
+                    url: 'http://localhost:5000/dir',
+                    method: 'GET',
+                    success: function(response) {
+                        // Clear the dropdown options
+                        $('#partno-dropdown').empty();
+
+                        //response = {"dir":["partno1","partno2"]}
+                        response = response.dir;
+
+                        // Add the new options based on the API response
+                        response.forEach(function(partno) {
+                            $('#partno-dropdown').append('<option value="' + partno + '">' + partno + '</option>');
+                        });
+                    },
+                    error: function() {
+                        console.log('Error retrieving part numbers from the API.');
+                    }
+                });
+        }
+
+        let dict_fails = {};
+        function getPrediction()
+        {
+                var dataToSend = {
+                    value1: $('#partno-dropdown).val()
+                };
+                $.ajax({
+                    url: 'http://localhost:5000/pred',
+                    method: 'GET',
+                    contentType: 'application/json',
+                    data: JSON.stringify(dataToSend),
+                    success: function(response) {
+                        dict_fails = {};
+                        //response = {"dir":["partno1","partno2"]}
+                        response = response.prediction;
+
+                        // Add the new options based on the API response
+                        response.forEach(function(pred_info) {
+                            dict_fails[pred_info.position] = pred_info.fail_count;
+                        });
+                        displayResult('N');
+                	$('#sys-msg-modal').modal('hide');
+			
+                	$('#system-message').prepend('檢測完成。<br/>');
+                    },
+                    error: function() {
+                        console.log('Error retrieving part numbers from the API.');
+                    }
+                });
+        }
+
+        function getSample()
+        {
+                $.ajax({
+                    url: 'http://localhost:5000/sample',
+                    method: 'GET',
+                    success: function(response) {
+                	$('#sample-image').attr('src', 'images/partno1/sample/N.bmp');
+			getPrediction();
+                    },
+                    error: function() {
+                        console.log('Error retrieving part numbers from the API.');
+                    }
+                });
+        }
+
+        function displayResult(direction)
+        {
+            //change sample-image div to another path, according to direction parameter
+                $('#sample-image').attr('src', 'images/partno1/sample/' + direction + '.bmp');
+                $('#pred-image').attr('src', 'images/partno1/pred/' + direction + '.png');
+                $('#total-tests').text('306');
+                $('#passed-tests').text(306-dict_fails[direction]);
+                $('#failed-tests').text(dict_fails[direction]);
+        }
+
+        let ngNodes = [];
+        function startPred() {
+            //display sys-msg-modal, set system-message to '取樣中...'
+            $('#sys-msg-content').html('取樣中...');
+            $('#sys-msg-modal').modal('show');
+            $('#system-message').prepend('取樣中...<br/>');
+
+            setTimeout(function() {
+                $('#sample-image').css('visibility', 'visible');
+                $('#system-message').prepend('取樣完成。<br/>');
+                $('#sys-msg-content').html('檢測中...');
+                getSample();
+            }, 1000);
+
+            //display image-section after 2 sec
+            setTimeout(function() {
+                //get random number between 0 and 11
+                const ngNodeQty = Math.floor(Math.random() * 6) + 2;
+                for (let i=0;i<ngNodeQty;i++) {
+                    const row = Math.floor(Math.random() * 12);
+                    const col = Math.floor(Math.random() * 4);
+                    $('#circle-' + row + '-' + col).addClass('red');
+                    ngNodes.push({row: row, col: col});
+                }
+                $('#total-tests').text('306');
+                $('#passed-tests').text(306-ngNodeQty);
+                $('#failed-tests').text(ngNodeQty);
+            }, 2000);
+        }
+
+        function exitSystem() {
+            //remove red class from ngnodes list
+            for (let i=0;i<ngNodes.length;i++) {
+                $('#circle-' + ngNodes[i].row + '-' + ngNodes[i].col).removeClass('red');
+            }
+            $('#total-tests').text('0');
+            $('#passed-tests').text('0');
+            $('#failed-tests').text('0');
+            $('#sample-image').css('visibility', 'hidden');
+        }
+
+        function drawProducts() {
+            const slotHtml = $('<div class="slot"></div>');
+
+            for (let i = 0; i < 12; i++) {
+                const circleRow = $('<div class="circle-row"></div>');
+
+                for (let j = 0; j < 4; j++) {
+                    const circle = $('<div class="circle"></div>');
+                    circle.attr('id', 'circle-' + i + '-' + j);
+                    console.log('circle-' + i + '-' + j, circle.attr('id'));
+                    if ((i + j) % 2 === 0) {
+                        //circle.addClass('dark');
+                    }
+                    circleRow.append(circle);
+                }
+
+                slotHtml.append(circleRow);
+                if (i == 5)
+                    slotHtml.append($('<br/><div class="circle-row" style="text-align:center;"><div class="circle"></div><div class="circle"></div><div class="circle"></div></div><br/>'));
+            }
+
+            $('#image-section').append(slotHtml.clone());
+            $('#image-section').append(slotHtml.clone());
+            $('#image-section').append(slotHtml.clone());
+            $('#image-section').append(slotHtml.clone());
+            $('#image-section').append(slotHtml.clone());
+            $('#image-section').append(slotHtml.clone());
+            
+        }
+    </script>
+</body>
+</html>
