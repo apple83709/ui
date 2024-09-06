@@ -17,7 +17,8 @@ import warnings
 warnings.filterwarnings('ignore')
 import pickle
 import time
-
+import configparser
+config = configparser.ConfigParser()
 
     
     
@@ -59,8 +60,8 @@ def main(input_file_source, input_file_target, direction, prod_name):
 
     image_source  = cv2.imread(input_file_source)
     image_target = cv2.imread(input_file_target)
-    min_contour_area = 40  # Minimum contour area to consider a contour as an island
-    max_contour_area = 180  
+    min_contour_area = config['DEFAULT']['min_contour_area']  # Minimum contour area to consider a contour as an island
+    max_contour_area = config['DEFAULT']['max_contour_area']  
     out_dir = '../result/03_SourceTarget/'+prod_name+'/region_'
     data_combined_dir = '../result/04_CombinedData/'+prod_name+'/region_'+direction+'_'
     
